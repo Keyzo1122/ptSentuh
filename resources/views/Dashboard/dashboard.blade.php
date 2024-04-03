@@ -10,10 +10,68 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 200px;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: #e0e0e0;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            border: 1px solid #ccc;
+        }
+    </style>
 </head>
 
 <body>
     <!--  Body Wrapper -->
+    <div>
+        <div id="carouselExampleIndicators" class="carousel slide" data-ride="carousel" style="display:none;">
+            <ol class="carousel-indicators">
+                <li data-target="#carouselExampleIndicators" data-slide-to="0" class="active"></li>
+                <li data-target="#carouselExampleIndicators" data-slide-to="1"></li>
+                <li data-target="#carouselExampleIndicators" data-slide-to="2"></li>
+            </ol>
+            <div class="carousel-inner">
+                <div class="carousel-item active">
+                    <img src="{{ asset('images/carousel1.jpg') }}" class="d-block w-100" alt="#">
+                </div>
+                <div class="carousel-item">
+                    <img src="{{ asset('images/carousel2.png') }}" class="d-block w-100" alt="#">
+                </div>
+                <div class="carousel-item">
+                    <img src="{{ asset('images/carousel3.jpg') }}" class="d-block w-100" alt="#">
+                </div>
+            </div>
+            <a class="carousel-control-prev" href="#carouselExampleIndicators" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#carouselExampleIndicators" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
+        </div>
+    </div>
     <div class="page-wrapper" id="main-wrapper" data-layout="vertical" data-navbarbg="skin6" data-sidebartype="full"
         data-sidebar-position="fixed" data-header-position="fixed">
         <!-- Sidebar Start -->
@@ -42,11 +100,6 @@
                                 </span>
                                 <span class="hide-menu">Layout</span>
                             </a>
-                            <ul class="sub-menu">
-                                <li><a href="#">Service 1</a></li>
-                                <li><a href="#">Service 2</a></li>
-                                <li><a href="#">Service 3</a></li>
-                            </ul>
                         </li>
                         <li class="nav-small-cap">
                             <i class="ti ti-dots nav-small-cap-icon fs-4"></i>
@@ -130,7 +183,8 @@
                                         {{ __('Logout') }}
                                     </a>
 
-                                    <form id="logout-form" action="{{ route('logout') }}" method="POST" class="d-none">
+                                    <form id="logout-form" action="{{ route('logout') }}" method="POST"
+                                        class="d-none">
                                         @csrf
                                     </form>
                                 </div>
@@ -145,46 +199,136 @@
                     <div class="card-body">
                         <h5 class="card-title fw-semibold mb-4">@yield('title')</h5>
                         @yield('content')
-                        <canvas id="canvas" width="800" height="600"></canvas>
+                        <div class="container">
+                            <div class="sidebar">
+                                <div class="draggable" draggable="true" data-type="carousel">Carousel</div>
+                                <div class="draggable" draggable="true" data-type="image">Image</div>
+                                <div class="draggable" draggable="true" data-type="video">Video</div>
+                            </div>
+                            <div class="canvas-container">
+                                <canvas id="canvas"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    </div>
     <script>
-        // Initialize Fabric.js canvas
-        var canvas = new fabric.Canvas('canvas');
-        console.log(canvas);
+        document.addEventListener('DOMContentLoaded', function() {
+            var canvas = new fabric.Canvas('canvas');
+            resizeCanvas();
 
-        // Create a rectangle
-        var rect = new fabric.Rect({
-            left: 100,
-            top: 100,
-            width: 200,
-            height: 100,
-            fill: 'red'
-        });
+            window.addEventListener('resize', resizeCanvas);
 
-        // Add rectangle to canvas
-        canvas.add(rect);
+            function resizeCanvas() {
+                var canvasContainer = document.querySelector('.canvas-container');
+                canvas.setDimensions({
+                    width: canvasContainer.offsetWidth,
+                    height: canvasContainer.offsetHeight
+                });
+            }
 
-        // Create a circle
-        var circle = new fabric.Circle({
-            left: 300,
-            top: 300,
-            radius: 50,
-            fill: 'blue'
-        });
+            var draggableElements = document.querySelectorAll('.draggable');
+            draggableElements.forEach(function(element) {
+                element.addEventListener('dragstart', function(event) {
+                    event.dataTransfer.setData('text/plain', event.target.dataset.type);
+                });
+            });
 
-        // Add circle to canvas
-        canvas.add(circle);
+            var canvasContainer = document.querySelector('.canvas-container');
+            canvasContainer.addEventListener('dragover', function(event) {
+                event.preventDefault();
+            });
 
-        $(document).ready(function() {
-            // Toggle submenu
-            $('.sidebar-item a').click(function() {
-                console.log("check")
-                $(this).siblings('.sub-menu').toggleClass('show');
+            canvasContainer.addEventListener('drop', function(event) {
+                event.preventDefault();
+                var type = event.dataTransfer.getData('text/plain');
+                var position = {
+                    x: event.offsetX,
+                    y: event.offsetY
+                };
+
+                if (type === 'carousel') {
+                    // let carousel = new fabric.Rect({
+                    //     left: position.x,
+                    //     top: position.y,
+                    //     width: 100,
+                    //     height: 50,
+                    //     fill: 'red'
+                    // });
+                    // canvas.add(carousel);
+                    var carouselElement = document.getElementById('carouselExampleIndicators');
+                    var carouselImage = carouselElement.querySelector('.carousel-item.active img');
+                    var imageUrl = carouselImage.getAttribute('src');
+                    fabric.Image.fromURL(imageUrl, function(img) {
+                        var canvasWidth = canvasContainer.offsetWidth;
+                        var canvasHeight = canvasContainer.offsetHeight;
+                        var imageWidth = canvasWidth;
+                        var imageHeight = canvasHeight * 0.3;
+
+                        img.set({
+                            left: position.x,
+                            top: position.y,
+                            width: imageWidth,
+                            height: imageHeight
+                        });
+                        canvas.add(img);
+                    });
+                } else if (type === 'image') {
+                    fabric.Image.fromURL("http://localhost:8000/images/image.jpg", function(img) {
+                        img.set({
+                            left: position.x,
+                            top: position.y,
+                            scaleX: 0.5,
+                            scaleY: 0.5
+                        });
+                        canvas.add(img);
+                    });
+                } else if (type === 'video') {
+                    fabric.Image.fromURL("http://localhost:8000/images/video.png", function(img) {
+                        img.set({
+                            left: position.x,
+                            top: position.y,
+                            scaleX: 0.5,
+                            scaleY: 0.5
+                        });
+                        canvas.add(img);
+                    });
+                }
+            });
+            fabric.Image.fromURL("http://localhost:8000/drag.png", function(img) {
+                img.set({
+                    left: 0,
+                    top: 0,
+                    scaleX: 0.55,
+                    scaleY: 0.3,
+                    selectable: false,
+                    eventable: false
+                });
+                canvas.add(img);
+            });
+            fabric.Image.fromURL("http://localhost:8000/drag.png", function(img) {
+                img.set({
+                    left: 0,
+                    top: 300,
+                    scaleX: 0.55,
+                    scaleY: 0.3,
+                    selectable: false,
+                    eventable: false
+                });
+                canvas.add(img);
+            });
+            fabric.Image.fromURL("http://localhost:8000/drag.png", function(img) {
+                img.set({
+                    left: 0,
+                    top: 600,
+                    scaleX: 0.55,
+                    scaleY: 0.3,
+                    selectable: false,
+                    eventable: false
+                });
+                canvas.add(img);
             });
         });
     </script>
